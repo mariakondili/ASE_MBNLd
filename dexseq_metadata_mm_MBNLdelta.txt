@@ -1,0 +1,11 @@
+Sample	mouse_id	replicate	treatment	condition	color
+1051_dexseq_counts.txt	1051	r1	Saline  CTRL	blue
+1055_dexseq_counts.txt	1055	r2	Saline  CTRL	blue
+1057_dexseq_counts.txt	1057	r3	Saline  CTRL	blue
+1052_dexseq_counts.txt	1052	r1	Treat_AAVGFP AAVGFP	red
+1056_dexseq_counts.txt	1056	r2	Treat_AAVGFP AAVGFP	red
+1058_dexseq_counts.txt	1058	r3	Treat_AAVGFP AAVGFP	red
+828_dexseq_counts.txt	828	r1	AAVGFP_MBNLd MBNLdecoy	green
+830_dexseq_counts.txt	830	r2	AAVGFP_MBNLd MBNLdecoy	green
+832_dexseq_counts.txt	832	r3	AAVGFP_MBNLd MBNLdecoy	green
+834_dexseq_counts.txt	834	r4	AAVGFP_MBNLd MBNLdecoy	green
