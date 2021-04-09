@@ -23,7 +23,7 @@ outDir_post="${workDir}/Post_Ctrl_vs_DM1_vs_MBNLdecoy"
 mkdir -p ${outDir_prep}/combo_tmp/
 mkdir -p ${outDir_post}
 
-group123="${workDir}/Ctrl_and_DM1_and_MBNLdecoy_bam.txt"
+group123="${workDir}/Ctrl_and_DM1_and_MBNLdecoy_bam.txt" # one line "," sep,with all replicates of all conditions in the order of the filename
 
 #for readLength (of mapped reads), find out from bam file :
 # samtools view -F 4 file.bam | head -n 1000000 | cut -f 10 | perl -ne 'chomp;print length($_) . "\n"' | sort -n | uniq -c
