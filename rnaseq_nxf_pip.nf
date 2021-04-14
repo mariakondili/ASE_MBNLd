@@ -22,18 +22,18 @@ workflow.onError {
     println "Oops .. something went wrong"
 }
 
-
-params.samplelist = "/shared/home/mkondili/MBNL_DCT/mouse_analysis/NXF_files/cutadapt_samplesheet_mouse.tsv"
-params.data_dir = "/shared/projects/mbnl_dct/mouse_seq/fastq/"
-params.cutadapt_dir = "/shared/projects/mbnl_dct/mouse_seq/NXF_STAR/cut_adapted"
-params.outDir = "/shared/projects/mbnl_dct/mouse_seq/NXF_STAR/Aligned"
-params.countsDir = "/shared/projects/mbnl_dct/mouse_seq/NXF_STAR/HTSeq_counts"
-params.dexseqDir = "/shared/projects/mbnl_dct/mouse_seq/NXF_STAR/DEXSeq_counts"
-params.refGenome ="/shared/bank/mus_musculus/mm10/star-2.7.5a"
-params.ref_Gtf ="/shared/home/mkondili/genomes/Annotation/mm10/gencode.vM25.annotation.gtf"
-params.dexseq_gtf="/shared/home/mkondili/genomes/Annotation/mm10/Galaxy_produced_DEXSeq_annot_mm10.gtf"
-params.cpus = 8
-
+// when cutadapt done: use this samplesheet for alignment
+// params.samplelist = "/shared/home/mkondili/MBNL_DCT/mouse_analysis/NXF_files/cutadapt_samplesheet_mouse.tsv"
+params.samplelist  = "/shared/home/mkondili/MBNL_DCT/mouse_analysis/NXF_files/fastq_samplesheet_mouse.tsv"
+params.data_dir  = "/shared/projects/mbnl_dct/mouse_seq/fastq/"
+params.cutadapt_dir = "/shared/projects/mbnl_dct/mouse_seq/Nextflow_STAR/cut_adapted"
+params.outDir= "/shared/projects/mbnl_dct/mouse_seq/Nextflow_STAR/Aligned_Encode"
+params.countsDir= "/shared/projects/mbnl_dct/mouse_seq/Nextflow_STAR/HTSeq_counts_Encode"
+//params.dexseqDir   = "/shared/projects/mbnl_dct/mouse_seq/NXF_STAR/DEXSeq_counts"
+params.refGenome = "/shared/bank/mus_musculus/mm10/star-2.7.5a"
+params.ref_Gtf = "/shared/home/mkondili/genomes/Annotation/mm10/gencode.vM25.annotation.gtf"
+//params.dexseq_gtf="/shared/home/mkondili/genomes/Annotation/mm10/Galaxy_produced_DEXSeq_annot_mm10.gtf"
+params.cpus = 20
 
 // create pairs as variables
 samplist = file("${params.samplelist}")
@@ -47,8 +47,8 @@ samplist.withReader {
         println "read_1 = ${r1}"
         String r2 = line.split(" ")[1]
         println "read_2 = ${r2}"
-        // String bn =  r1.split("${params.data_dir}")[1].split("_R1")[0]
-        String bn =  r1.split("${params.cutadapt_dir}")[1].split("/")[1].split("_R1")[0]
+        String bn =  r1.split("${params.data_dir}")[1].split("_R1")[0]
+        // String bn =  r1.split("${params.data_dir}")[1].split("/")[1].split("_R1")[0]
         println "Base-name = ${bn}"
         pair.add([bn,r1,r2])
     }
@@ -94,14 +94,12 @@ process Cut_Adapters {
 
 
 // mkdir -p /shared/projects/mbnl_dct/mouse_seq/cut_adapted/  \
-// Example:
 // cutadapt --cores 8 -B AGATCGGAAGAG --minimum-length 75 --report  minimal  \
 // --o /shared/projects/mbnl_dct/mouse_seq/cut_adapted/1051_R1_cutadapt.fastq.gz \
 // -p /shared/projects/mbnl_dct/mouse_seq/cut_adapted/1051_R2_cutadapt.fastq.gz \
 // -Z \
 // /shared/projects/mbnl_dct/mouse_seq/fastq/1051_R1.fastq \
 // /shared/projects/mbnl_dct/mouse_seq/fastq/1051_R2.fastq
-
 
 
 process STAR_Alignment {
@@ -111,12 +109,12 @@ process STAR_Alignment {
       module "star/2.7.5a:perl/5.26.2"
 
       input:
-      // tuple val(bn),path(f1),path(f2) from cutadChannel
-      tuple val(bn),path(f1),path(f2) from inputChannel
+      tuple val(bn),path(f1),path(f2) from cutadChannel
+      // tuple val(bn),path(f1),path(f2) from inputChannel
 
       output:
-      //tuple path("${bn}/${bn}_Aligned.sortedByCoord.out.bam"),val(bn) into align1Channel
-      tuple path("${bn}/${bn}_Aligned.sortedByCoord.out.bam"),val(bn) into align2Channel
+      tuple path("${bn}/${bn}_Aligned.sortedByCoord.out.bam"),val(bn) into align1Channel
+      // tuple path("${bn}/${bn}_Aligned.sortedByCoord.out.bam"),val(bn) into align2Channel
 
 
       shell:
@@ -126,6 +124,14 @@ process STAR_Alignment {
       STAR --runMode  alignReads \
            --runThreadN !{params.cpus} \
            --genomeDir !{params.refGenome}  \
+           --outFilterMultimapNmax 20 \
+           --alignSJoverhangMin 8 \
+           --alignSJDBoverhangMin 1 \
+           --outFilterMismatchNmax 999 \
+           --outFilterMismatchNoverReadLmax 0.04 \
+           --alignIntronMin 20 \
+           --alignIntronMax 1000000 \
+           --alignMatesGapMax 1000000 \
            --readFilesIn !{f1}  !{f2}  \
            --outFileNamePrefix !{bn}/!{bn}_  \
            --outSAMtype BAM SortedByCoordinate \
@@ -136,7 +142,16 @@ process STAR_Alignment {
        """
 }
 
-
+// --outFilterType BySJout : reduces the number of ”spurious” junctions
+// --outFilterMultimapNmax 20 : max  number  of  multiple  alignments  allowed  for  a  read:  if  exceeded,  the  read  is  considered unmapped
+// --alignSJoverhangMin 8 : minimum overhang for unannotated junctions
+// --alignSJDBoverhangMin 1 : minimum overhang for annotated junctions
+// --outFilterMismatchNmax 999 : maximum number of mismatches per pair, large number switches off this filter
+// --outFilterMismatchNoverReadLmax 0.04 : max number of mismatches per pair relative to read length:  for 2x100b,
+//                         max number of mis-matches is 0.04*200=8 for the paired read
+// --alignIntronMin 20  : minimum intron length
+// --alignIntronMax 1000000 : maximum intron length
+// --alignMatesGapMax 1000000 : maximum genomic distance between mates
 
 process HTSeq_counts_on_Gene {
 
@@ -168,9 +183,7 @@ process HTSeq_counts_on_Gene {
         """
 }
 
-
-
-
+/*
 process DEXSeq_counts_Exons {
 
          memory "40G"
@@ -204,9 +217,17 @@ process DEXSeq_counts_Exons {
          // /shared/projects/mbnl_dct/mouse_seq/STAR_DEXSeq_counts/1051_dexseq_counts.txt
 }
 
+*/
 
-// LAUNCH PIPE:
-// nextflow -c  config_pip.conf  run -w  /[..]/NXF_pip/  nextflow_pip_star_htseq.nf
+// in python:
+// gff_file = "/shared/home/mkondili/genomes/Annotation/mm10/Galaxy_produced_DEXSeq_annot_mm10.gtf"
+// sam_file = "/shared/projects/mbnl_dct/mouse_seq/STAR_Aligned/1051/1051_Aligned.sortedByCoord.out.bam"
+// out_file = "/shared/projects/mbnl_dct/mouse_seq/STAR_DEXSeq_counts/1051_dexseq_counts.txt"
+// stranded = True
+// reverse = True
+// is_PE = True
+// minaqual = 10
+// order = "pos"
 
 
 // --outReadsUnmapped = Fastx:
