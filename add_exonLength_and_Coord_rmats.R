@@ -1,28 +1,6 @@
 #!/usr/bin/env R 
 
-# add_psi_counts_per_repl <- function(event, rmats_dir, suffix) {
-#   #splice_events <- c("A3SS", "A5SS","MXE", "RI", "SE" )
-#   
-#   t = read.delim(paste0(rmats_dir, event, suffix),as.is=TRUE,header=TRUE)
-#   for (li in 1:nrow(t) ){
-#     ## Create new columns for each replicate's PSI-value
-#     t$IncLevel1_r1[li]  <- as.numeric(unlist(strsplit(t$IncLevel1[li],","))[1])
-#     t$IncLevel1_r2[li]  <- as.numeric(unlist(strsplit(t$IncLevel1[li],","))[2])
-#     t$IncLevel1_r3[li]  <- as.numeric(unlist(strsplit(t$IncLevel1[li],","))[3])
-#     
-#     t$IncLevel2_r1[li]  <- as.numeric(unlist(strsplit(t$IncLevel2[li],","))[1])
-#     t$IncLevel2_r2[li]  <- as.numeric(unlist(strsplit(t$IncLevel2[li],","))[2])
-#     t$IncLevel2_r3[li]  <- as.numeric(unlist(strsplit(t$IncLevel2[li],","))[3])
-#     t$splice_event[li]  <- event
-#   }
-#   to_rmv <- c("IJC_SAMPLE_1",	"SJC_SAMPLE_1",	"IJC_SAMPLE_2",	"SJC_SAMPLE_2","IncLevel1", "IncLevel2" )
-#   t <- dplyr::select(t, -all_of(to_rmv))
-#   # write.table(t, file=paste0(out_dir, "/",s,new_suffix), sep="\t",
-#   #                              quote=F,col.names=TRUE,row.names=F,na = "NA")
-#   return(t)
-# }
-
-add_psi_counts_per_9repl <- function(event, rmats_dir, suffix) {
+add_psi_counts_per_repl <- function(event, rmats_dir, suffix) {
   #splice_events <- c("A3SS", "A5SS","MXE", "RI", "SE" )
   
   t = read.delim(paste0(rmats_dir, event, suffix),as.is=TRUE,header=TRUE)
@@ -42,8 +20,8 @@ add_psi_counts_per_9repl <- function(event, rmats_dir, suffix) {
     
     t$splice_event[li]  <- event
   }
-  #to_rmv <- c("IJC_SAMPLE_1",	"SJC_SAMPLE_1",	"IJC_SAMPLE_2",	"SJC_SAMPLE_2","IncLevel1", "IncLevel2" )
-  to_rmv <- c("IJC_SAMPLE_1",	"SJC_SAMPLE_1",	"IJC_SAMPLE_2",	"SJC_SAMPLE_2","IncLevel1", "IncLevel2")
+  # remove useless columns after new ones are created
+  to_rmv <- c( str_extract(t, ".JC_SAMPLE_([1-2])"), str_extract(t,"IncLevel([1-2])$") )
   t <- dplyr::select(t, -all_of(to_rmv))
 
   # write.table(t, file=paste0(out_dir, "/",s,new_suffix), sep="\t",
@@ -56,7 +34,7 @@ add_exonLen_and_coord <- function(splice_event, tab_suffix=".MATS.JCEC.txt", in_
   #""" Receive the newly created tables with one column per replicate
   #    Create 2 new columns: ExonLength & upstream-alternative_exon-downstream coordinates """ 
   
-  t <- add_psi_counts_per_9repl(splice_event,in_dir,tab_suffix)
+  t <- add_psi_counts_per_repl(splice_event,in_dir,tab_suffix)
   
   library(stringr)
   # t = read.delim(paste0(in_dir, "/",splice_event, tab_suffix),as.is=TRUE,header=TRUE)
