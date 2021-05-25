@@ -77,7 +77,7 @@ piechart_for_correction <- function(ase, psi.co, fdr.co, full_corr=80, plot_name
       coord_polar(theta="y") + 
       xlim(c(2, 4)) + 
       theme_void() +
-      ggtitle("Splicing Correction MBNLΔ,\n|dPSI|>0.15,FDR <0.05")
+      ggtitle( paste0("Splicing Correction MBNLΔ,\n|dPSI|>",dpsi.co,",FDR< ",fdr.co) )
   dev.off()      
  
  } 
