@@ -1,0 +1,310 @@
+---
+title: "From rMATS output to heatmap of diff splicing events"
+author: "Maria Kondili"
+date: "12/04/2021"
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(glue))
+
+```
+
+Objective: Use rMATS output & Merge all events-types & Create heatmap of diff splicing events
+
+```{r}
+
+suppressPackageStartupMessages(library(dplyr))
+
+work_dir="/projects/mbnl_dct/mouse_seq/rMATS_splicingCounts/"
+#dir.create(work_dir, showWarnings = F)
+
+Decoy_vs_Saline_dir <- paste0(work_dir,"MBNLd_vs_Saline_Splicing/")
+# Decoy_vs_Saline_dir <- paste0(work_dir,"Encode_MBNLd_vs_Saline_Splicing/")
+
+AavGfp_vs_Saline_dir <- paste0(work_dir,"AAVGFP_vs_Saline_Splicing/")
+
+```
+
+Alignment done with default params, as for Human-cells (with STAR)
+
+Create output folder to save merged table
+
+```{r}
+outdir.dct <- paste0(work_dir,"modif_MBNLd_vs_Saline_Splicing/")
+outdir.gfp <- paste0(work_dir,"modif_AAVGFP_vs_Saline_Splicing/")
+##! ->hadn't run AAVGFP-vs-Saline rMATS with STAR !>done June 2021
+dir.create(outdir.dct, showWarnings = F)
+dir.create(outdir.gfp, showWarnings = F)
+```
+
+
+```{r}
+
+source("add_exonLength_and_Coord.R")
+
+splice_events <- c("A3SS", "A5SS","MXE", "RI", "SE" )
+## output in same folder but with suffix "_exonCoord"
+
+
+for (s in splice_events) {
+  cat(" Launching event :", s,"\n")
+  # An rMATS output is read : read.delim(paste0(Decoy_vs_Saline_dir, s, ".MATS.JCEC.txt") ,as.is=TRUE,header=TRUE)
+  # add_exonLen_and_coord(splice_event=s, tab_suffix=".MATS.JCEC.txt",
+  #                       in_dir=Decoy_vs_Saline_dir,
+  #                       out_dir= outdir.saline)
+  #
+  add_exonLen_and_coord(splice_event=s, tab_suffix=".MATS.JCEC.txt",
+                        in_dir=Decoy_vs_Saline_dir,
+                        out_dir= outdir.dct)
+
+  add_exonLen_and_coord(splice_event=s, tab_suffix=".MATS.JCEC.txt",
+                        in_dir=AavGfp_vs_Saline_dir,
+                        out_dir= outdir.gfp)
+
+}
+
+glue("New tables with modified columns are created:\n {list.files(outdir.gfp)}")
+glue("New tables with modified columns are created:\n {list.files(outdir.dct)}")
+
+```
+
+> call function for : MBNLdecoy-vs-Saline
+
+```{r}
+new_suffix = ".JCEC_PerRepl_exonCoord.txt"
+
+colsOI <- c("GeneID",	"geneSymbol","chr","strand",
+            "IncFormLen", "SkipFormLen","ExonLength",
+            "IncLevel1_r1","IncLevel1_r2","IncLevel1_r3",
+            "IncLevel2_r1","IncLevel2_r2","IncLevel2_r3",
+            "splice_event", "IncLevelDifference",
+            "alternative_exon_coordinates","PValue","FDR" )
+
+source("merge_spliceTypes_and_save.R")
+
+ase.dct.star <- merge_spliceTypes_and_save(splice_events,
+                                             new_suffix, colsOI,
+                                             outdir=outdir.dct,
+                                             filename="Saline_vs_MBNLdecoy")
+
+ase.gfp.star <- merge_spliceTypes_and_save(splice_events,
+                                             new_suffix, colsOI,
+                                             outdir=outdir.gfp,
+                                             filename="Saline_vs_AAVGFP")
+
+
+```
+
+
+```{r,echo=F}
+
+cat("Merged Splicing Events for Saline-vs-MBNLd are in file :'merged_modif_ASE_Saline_vs_MBNLdecoy.tsv' ")
+
+cat("Merged Splicing Events for Saline-vs-AAVGFP are in file :'merged_modif_ASE_Saline_vs_AAVGFP.tsv' ")
+
+```
+
+
+```{r}
+
+ase.dct.star <- mutate(ase.dct.star ,
+                     "dPSI" = IncLevelDifference )
+
+ase.gfp.star <- mutate(ase.gfp.star ,
+                     "dPSI" = IncLevelDifference )
+
+
+```
+
+```{r plot_heatmap_function}
+
+plot_heatmap_signif_splice <- function(ase, fdr.co, psi.co, pair, inc_level_cols= c(8:13), plot_name) {
+
+    ase.filt <- subset(ase, (FDR < fdr.co &  abs(dPSI) > psi.co) )
+
+
+    ###  z.gene =  (E(g) - Mean(g.replicates) ) / M.A.D (g.replicates), mad=median.absolute.deviation
+    x <- ase.filt[,inc_level_cols]
+    s1 = strsplit(pair, "_vs_")[[1]][1]
+    s2 = strsplit(pair, "_vs_")[[1]][2]
+    colnames(x) <- c( paste(s1,"_", c("r1","r2","r3"),sep=""),
+                      paste(s2,"_",c("r1","r2","r3"),sep=""))
+
+
+    cal_z_score <- function(x){
+      (x - mean(x)) / sd(x)
+    }
+    x_norm <- t(apply(x, 1, cal_z_score))
+    # x_norm <- x_norm[-which(apply(x_norm, 2, is.na)) ,]
+
+    #Rowv=as.dendrogram(hcl_row),tree=ct))
+    library(gplots)
+    library(RColorBrewer)
+
+
+    heatmap.2(x_norm,
+              Rowv=TRUE,
+              Colv=F,
+              dendrogram ='row',
+              scale="row", na.rm=TRUE,
+              trace='none',
+              labCol=colnames(x),
+              col=rev(colorRampPalette(brewer.pal(10, "RdBu"))(256)),
+              margins=c(9,2),
+              cexCol=1.3,
+              srtCol=45,
+              labRow="",
+              offsetCol=0,
+              key=TRUE,
+              keysize = 1.5,
+              density.info="density",
+              key.title="Color range",
+              key.xlab="norm.counts",
+              key.ylab="Counts",
+              key.par=list(mar=c(3,4,3,1)),
+              notecex=3,
+              main=paste(nrow(x_norm),"signif. Diff/ial splicing events\nin ",pair))
+    #print(hmp)
+    return(x)
+
+}
+
+```
+
+Call for ASE:Saline-vs-MBNLdecoy
+
+```{r call function plot}
+## FILTER NON-SIGNIFICANT
+
+pair="Saline_vs_MBNLdecoy"
+plot_name="Plots/Heatmap_SignifAltSplicing_Encode_Saline_vs_MBNLdecoy.png"
+
+# png(plot_name)
+ase.dct.filt.20 <- plot_heatmap_signif_splice(ase.dct.star, fdr.co= 0.05, psi.co=0.20, pair,inc_level_cols= c(8:13), plot_name)
+#dev.off()
+
+cat("Genes spliced: \n ")
+ase.dct.star[rownames(ase.dct.filt.20),"geneSymbol" ]
+
+
+```
+
+14 events when psi.co = 0.20
+
+```{r}
+
+ase.dct.filt.15 <- plot_heatmap_signif_splice(ase.dct.star, fdr.co= 0.05, psi.co=0.15, pair, inc_level_cols= c(8:13),plot_name)
+
+cat("Genes spliced: \n ")
+ase.dct.star[rownames(ase.dct.filt.15),"geneSymbol" ]
+
+
+```
+
+18 events when psi.co = 0.15
+
+####--> with AAVGFP-vs-Saline :
+```{r}
+
+pair="Saline_vs_AAVGFP"
+plot_name="Plots/Heatmap_SignifAltSplicing_Saline_vs_AAVGFP.png"
+
+# png(plot_name)
+ase.gfp.filt.20 <- plot_heatmap_signif_splice(ase.gfp.star, fdr.co= 0.05, psi.co=0.20, pair,inc_level_cols=c(8:13), plot_name)
+
+cat("Genes spliced :\n")
+cat(ase.gfp.star[rownames(ase.gfp.filt.20),'geneSymbol'])
+
+ase.gfp.filt.15 <- plot_heatmap_signif_splice(ase.gfp.star, fdr.co= 0.05, psi.co=0.15, pair,inc_level_cols=c(8:13), plot_name)
+
+cat(ase.gfp.star[rownames(ase.gfp.filt.15),'geneSymbol'])
+
+```
+
+Find Common Significantly Spliced Genes & events in Mbnldecoy/Saline & AAVGFP/Saline :
+
+```{r}
+cat("Genes:\n")
+
+intersect (ase.gfp.star[rownames(ase.gfp.filt.20),"geneSymbol"] ,
+           ase.dct.star[rownames(ase.dct.filt.20),"geneSymbol"] )
+
+cat("Events:\n")
+intersect(ase.dct.star[rownames(ase.dct.filt.20),"alternative_exon_coordinates"],
+          ase.gfp.star[rownames(ase.gfp.filt.20),"alternative_exon_coordinates"] )
+
+
+```
+
+#### PIE-CHART of SIGNIF-SPLICED EVENTS and Others
+Show that differential splicing events in MBNLdecoy compaired to Saline are very few
+
+```{r create_piechart_function}
+
+create_pieChart_Splicing <- function(ase, pair, signif.co,psi.co) {
+  ##""" Test with : ase = ase.saline; pair="Saline_vs_MBNLdecoy" ; signif.co =0.05 ; psi.co=0.20 """
+
+  library(ggplot2)
+
+  ## Count events Signif. splicing :
+  ## count InclDifference(dPSI) = mean(Saline) -  mean(MBNLdecoy)
+  ## INCLUDED : PSI < -0.15
+  ## EXCLUDED : PSI > 0.15
+
+  signif <- nrow(subset(ase, (FDR < signif.co  &  abs(IncLevelDifference) >= psi.co )))
+  all_splice <-  nrow(ase)
+
+  splice_counts <- data.frame(category=c("All", "Signif & highPSI"),
+                              count=c(all_splice,signif))
+
+  ## calculate percentage of each count :
+  splice_counts$fraction = round(splice_counts$count / sum(splice_counts$count),2) * 100
+
+  # Compute the cumulative percentages (top of each rectangle)
+  splice_counts$ymax = cumsum(splice_counts$fraction)
+
+  # Compute the bottom of each rectangle
+  splice_counts$ymin = c(0, head(splice_counts$ymax, n=-1))
+
+  # Compute label position
+  # pos <- (splice_counts$ymax + splice_counts$ymin) / 2 # = 49.0 98.5 99.5
+  # 98 & 99 are very close, I ll replace them with 97 and 10, left and right of the end of circle.
+  splice_counts$labelPosition <- c(50.0, 97.0)
+
+  # Compute a good label
+  splice_counts$label <- paste0(splice_counts$category,"\n", splice_counts$fraction, " %")
+
+  # Make the plot
+  dir.create("Plots/",showWarnings = F)
+  #png(paste0("Plots/Donut_Plot_Signif_SplicingEvents_",pair,".png"))
+    ggplot(splice_counts, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+      geom_rect() +
+      geom_label( x=3.5, aes(y=labelPosition, label=label), size=3) +
+      coord_polar(theta="y") +
+      xlim(c(2, 4)) +
+      theme_void()
+ #dev.off()
+
+}
+
+```
+
+call it with ASE table :
+
+```{r, call_function}
+
+create_pieChart_Splicing(ase.dct.star, pair="Saline_vs_MBNLdecoy",signif.co=0.05, psi.co=0.20)
+
+```
+
+####-- with AAVGFP ...
+
+```{r}
+create_pieChart_Splicing(ase.gfp.star, pair="Saline_vs_MBNLdecoy",signif.co=0.05, psi.co=0.20)
+```

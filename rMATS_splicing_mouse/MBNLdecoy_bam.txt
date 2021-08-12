@@ -1,0 +1,3 @@
+/Nextflow_STAR/Aligned/828/828_Aligned.sortedByCoord.out.bam,
+/Nextflow_STAR/Aligned/830/830_Aligned.sortedByCoord.out.bam,
+/Nextflow_STAR/Aligned/834/834_Aligned.sortedByCoord.out.bam
