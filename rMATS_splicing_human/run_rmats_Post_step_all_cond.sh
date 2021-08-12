@@ -6,8 +6,8 @@
 #SBATCH -e slurm.%j.err
 
 module load conda
-
 module load rmats/4.1.1
+
 rmats_dir="/software/miniconda/envs/rmats-4.1.1/bin"  # module location
 # rmats_dir="/shared/home/mkondili/.conda/pkgs/rmats-4.1.1-py37h2140d24_0/bin"  #local installation
 ## /shared/ifbstor1/software/miniconda/envs/rmats-4.1.1/rMATS/cp_with_prefix.py
@@ -16,14 +16,14 @@ gtf="/home/mkondili/genomes/Annotation/hg19/Homo_sapiens.GRCh37.87.CHR.gtf"
 # gtf="/shared/bank/homo_sapiens/hg19/gff/gencode.v19.annotation.gtf"
 workDir="/projects/mbnl_dct/human_cellline/rMATS_SplicingCounts"
 
-outDir_prep="${workDir}/Prep_Ctrl_vs_DM1_vs_MBNLdecoy"
-outDir_post="${workDir}/Post_Ctrl_vs_DM1_vs_MBNLdecoy"
+outDir_prep="${workDir}/Prep_Ctrl_vs_DM1_vs_MBNLd"
+outDir_post="${workDir}/Post_Ctrl_vs_DM1_vs_MBNLd"
 
 
 mkdir -p ${outDir_prep}/combo_tmp/
 mkdir -p ${outDir_post}
 
-group123="${workDir}/Ctrl_and_DM1_and_MBNLdecoy_bam.txt" # one line "," sep,with all replicates of all conditions in the order of the filename
+group123="${workDir}/CTRL_and_DM1_and_MBNLd_bam.txt" # one line "," sep,with all replicates of all conditions in the order of the filename
 
 ## Add a prefix to files and add them to a common tmp folder for POST task.
 #> call cp_with_prefix.py

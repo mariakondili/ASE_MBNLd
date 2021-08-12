@@ -14,18 +14,14 @@ cores=8
 #gtf="/shared/home/mkondili/genomes/Annotation/hg19/Homo_sapiens.GRCh37.87.CHR.gtf"
 gtf="/shared/bank/homo_sapiens/hg19/gff/gencode.v19.annotation.gtf"
 workDir="/shared/projects/mbnl_dct/human_cellline/rMATS_SplicingCounts"
-outDir_prep="${workDir}/Prep_Ctrl_vs_DM1_vs_MBNLdecoy"
+outDir_prep="${workDir}/Prep_Ctrl_vs_DM1_vs_MBNLd"
 
 
 mkdir -p ${outDir_prep}
 
-group1="${workDir}/Control_bam.txt"
+group1="${workDir}/CTRL_bam.txt"
 group2="${workDir}/DM1_bam.txt"
-group3="${workDir}/MBNLdecoy_bam.txt"
-
-#for readLength (of mapped reads), find out from bam file :
-# samtools view -F 4 file.bam | head -n 1000000 | cut -f 10 | perl -ne 'chomp;print length($_) . "\n"' | sort -n | uniq -c
-# 75-150 bp length
+group3="${workDir}/MBNLd_bam.txt"
 
 ###--- PREP CTRL-vs-DM1 ----###
 mkdir -p ${outDir_prep}/tmp_dm1/
