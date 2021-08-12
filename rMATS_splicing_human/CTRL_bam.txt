@@ -1,0 +1,7 @@
+/BAM/C25cl4_1_Aligned.sortedByCoord.out.bam,
+/BAM/C25cl4_2_Aligned.sortedByCoord.out.bam,
+/BAM/C25cl4_3_Aligned.sortedByCoord.out.bam,
+/BAM/C25cl48_1_Aligned.sortedByCoord.out.bam,
+/BAM/C25cl48_2_Aligned.sortedByCoord.out.bam,
+/BAM/C25cl48_3_Aligned.sortedByCoord.out.bam
+# should all be in one line separated only by comma with full path

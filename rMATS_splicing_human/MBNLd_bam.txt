@@ -1,0 +1,3 @@
+/BAM/DM1cl6_MBNLd_1_Aligned.sortedByCoord.out.bam,
+/BAM/DM1cl6_MBNLd_2_Aligned.sortedByCoord.out.bam,
+/BAM/DM1cl6_MBNLd_3_Aligned.sortedByCoord.out.bam
