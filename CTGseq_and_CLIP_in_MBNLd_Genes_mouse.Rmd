@@ -1,0 +1,160 @@
+#!/usr/bin/env R
+
+```{r}
+
+
+
+###
+### Use the DE-object from "DESeq2_Mbnld_vs_Saline_mouse.R",
+### and find out common genes with CLIP-data, or CTG-repeats-genes
+###
+
+
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+
+
+####--> Diff.analysis data :
+sigD <- subset(D, padj_MBNLdVsCTRL < 0.05 & abs(log2FoldChange_MBNLdVsCTRL)>=1 )
+
+
+###--> CTG -repeats Genes list :
+ctg_data <- read.delim("/mbnl_dct/mouse_seq/CTG_sequences_in_genes.txt",sep="\t", header=TRUE,as.is=TRUE)
+## Obtained by Naira,given to Arnaud, since project of Pip6-therapy(JCI publ)
+
+ctg_genes_in_mbnldct <-  unique(sigD$geneName[which(sigD$geneName  %in%  ctg_data$external_gene_name)]) %>% length
+#= 18
+
+##> Find common with MBNLd-vs-AAVGFP deregulated genes :
+sigD.aav <- subset(D, padj_AAVGFPvsCTRL < 0.05 & abs(log2FoldChange_AAVGFPvsCTRL)>=1 )
+
+ctg_genes_in_aav <-  unique(sigD.aav$geneName[which(sigD.aav$geneName  %in%  ctg_data$external_gene_name)]) %>% length
+#= 27
+
+
+##--> find the gene-name { CTG-rep @ D.E. MBNLdct }
+unique(sigD$geneName[which(sigD$geneName  %in%  ctg_data$external_gene_name)])
+
+# [1] "Ikzf3"   "Pygl"    "Col24a1" "Rasgrf1" "Greb1"   "Fer1l6"  "Spon1"   "Wdr17"   "Ptger3"
+# [10] "Nell1"   "Ly9"     "Cyp2s1"  "Cdh4"    "Cdh22"   "Aox2"    "Mab21l3" "Ranbp3l" "Pglyrp2"
+## L = 18
+
+
+unique(sigD.aav$geneName[which(sigD.aav$geneName  %in%  ctg_data$external_gene_name)])
+# [1] "Ikzf3"    "Ly9"      "Mab21l3"  "Pglyrp2"  "Slc13a3"  "Cpne2"    "Myo3b"    "Mt3"     
+# [9] "Treml4"   "Cd86"     "Srrm4os"  "Wdfy4"    "Plcg2"    "Cnr2"     "Stat1"    "Scpep1"  
+# [17] "Nrg1"     "Ppm1h"    "Aim2"     "Litaf"    "Trerf1"   "Diaph3"   "Pla2g15"  "Myof"    
+# [25] "Gas7"     "Cdkn3"    "Mis18bp1"
+
+
+###---> CLIP-MBNL1 data
+
+hits_clip <- read.delim("/mbnl_dct/mouse_seq/DESeq2_analysis/HITS_CLIP-MBNL1__Lee_et_al.csv",
+                        header=T,as.is=T, sep="\t")
+
+
+nb_clip_genes_in_dct <- ( unique(hits_clip$gene_symbol) %in% unique(sigD$geneName)) %>% which %>% length
+# 40
+
+
+nb_clip_genes_in_aavgfp <- (unique(hits_clip$gene_symbol) %in% unique(sigD.aav$geneName)) %>% which %>% length
+# 57
+
+###--->  Any common CLIP-genes with CTG-rep-genes?
+CLIP_in_CTG <- length(hits_clip$gene_symbol[which(unique(hits_clip$gene_symbol)
+                                                %in%
+                                           unique(ctg_data$external_gene_name))]) ##= 99 !!!
+
+
+###---> Any common from those overlapping with D.E.MBNLdct ?
+
+common_a = intersect(unique(ctg_data$external_gene_name), unique(sigD$geneName) ) # 18
+
+common_b = intersect(unique(hits_clip$gene_symbol), unique(sigD$geneName) ) #40
+
+common_ctg_clip <- intersect(common_a,common_b) %>% length  #= 2
+
+
+#####-------> PLOT PIE-CHART ------#####
+
+mbnl_dct_genes <- length(sigD$geneName) #863
+clip_genes  <- nb_clip_genes_in_dct
+ctg_genes <-  (ctg_genes_in_mbnldct - common_ctg_clip) #16
+
+
+#### --> with MBNL.dct DE_genes ####
+my_DEgenes <- (mbnl_dct_genes  - clip_genes - ctg_genes)
+
+groups <- data.frame(category=c("D.E. MBNLdct", "CLIP_MBNL1", "CTG_repeat"),
+                     count=c(my_DEgenes ,clip_genes ,ctg_genes))
+
+groups
+## calculate percentage of each count :
+groups$fraction = round(groups$count / sum(groups$count),3) * 100
+
+# label only fraction
+groups$label <- paste0(groups$fraction, " %")
+
+main_title = "MBNL-dependent Genes overlapping with DCT-deregulated"
+
+#png("Pie_Chart_CLIP+CTG_repeats_ovl_DE_MBNLdecoy-Saline_genes.png")
+ggplot(groups, aes(x="",y=fraction, fill=category) ) +
+  geom_bar(stat="identity",width=1) +
+  coord_polar(theta="y",start=0) +
+  theme_void() +
+  scale_fill_manual(values=c("dodgerblue", "bisque2", "darkgreen")) +
+  geom_text(aes(x ="", y = fraction, label = paste0(fraction,"%")),
+            position = position_dodge(width = 0.8)) +
+  ggtitle(main_title )
+#dev.off()
+
+##>> groups
+# category      count   fraction label
+# 1 DE_MBNLdct   847       98     98 %
+# 2 CLIP_MBNL1     0        0     0 %
+# 3 CTG_repeat    16        2     2 %
+
+#### WITH AAVGFP-vs-CTRL genes: ####
+
+aavgfp_genes <- length(sigD.aav$geneName) #1548
+nb_clip_genes_in_aavgfp <- intersect( unique(hits_clip$gene_symbol) , unique(sigD.aav$geneName)) %>% length # 57
+nb_clip_genes_in_aavgfp
+
+ctg_genes_in_aav <-  unique(sigD.aav$geneName[which(sigD.aav$geneName  %in%  ctg_data$external_gene_name)]) %>% length
+#= 27
+ctg_genes_in_aav
+
+## CTG-genes left unique:
+ctg_genes.aav <-  (ctg_genes_in_aav - common_ctg_clip)
+ctg_genes.aav
+
+
+## DE.genes left unique,that do not overlap:
+my_DEgenes <- (aavgfp_genes  - nb_clip_genes_in_aavgfp - ctg_genes.aav)
+
+
+groups <- data.frame(category=c("D.E.AAVGFP/WT", "CLIP_MBNL1", "CTG_repeat"),
+                     count=c(my_DEgenes ,clip_genes ,ctg_genes))
+groups
+
+## calculate percentage of each count :
+groups$fraction = round(groups$count / sum(groups$count),3) * 100
+
+# label only fraction
+groups$label <- paste0(groups$fraction, " %")
+
+
+main_title = "MBNL-dependent Genes overlapping with DCT-deregulated"
+
+#png("Plots/Pie_Chart_CLIP+CTG_repeats_ovl_DE_AAVGFP_vs_Saline_genes.png")
+ggplot(groups, aes(x="", y=fraction, fill=category) ) +
+  geom_bar(stat="identity",width=1) +
+  coord_polar(theta="y",start=0) +
+  theme_void() +
+  scale_fill_manual(values=c("dodgerblue", "bisque2", "darkgreen")) +
+  geom_text(aes(x ="", y = fraction, label = paste0(fraction,"%")),
+            position = position_dodge(width = 0.8)) +
+  ggtitle(main_title )
+#dev.off()
+
+```
