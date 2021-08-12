@@ -22,8 +22,8 @@
 module load  hisat2/2.1.0
 module load samtools
 
-index_dir=/projects/mbnl_dct/annotation_files/hisat2_indexes
-data_dir=/projects/mbnl_dct/public_Data_SRA/Fastq
+index_dir=/mbnl_dct/annotation_files/hisat2_indexes
+data_dir=/mbnl_dct/public_Data_SRA/Fastq
 alignm_dir=${data_dir}/Trimmed/HISAT2_Alignment
 mkdir -p ${alignm_dir}
 
