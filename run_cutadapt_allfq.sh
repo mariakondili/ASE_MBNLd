@@ -11,16 +11,7 @@ module load fastqc/0.11.9
 # fastqc [-o output dir] [--(no)extract] [-f fastq|bam|sam]
 #            [-c contaminant file] seqfile1 .. seqfileN
 
-input_dir=/projects/mbnl_dct/public_Data_SRA/Fastq
-fastqc_dir=${input_dir}/../Quality_Check/
-mkdir -p ${fastqc_dir}
-
-java_dir=/software/miniconda/envs/fastqc-0.11.9/bin/java
-#java_dir to be found with command "$ which java", when fastqc is loaded
-fastqc -o ${fastqc_dir} -j ${java_dir} \
-${input_dir}/Trimmed/SRR11548475_1_trimmed.fq.gz  \
-${input_dir}/Trimmed/SRR11548475_2_trimmed.fq.gz
-
+input_dir=/mbnl_dct/public_Data_SRA/Fastq
 
 module load cutadapt/2.10
 
@@ -37,8 +28,20 @@ for d in ${sampleslist[@]}; do
 
     # Universal adapter Illumina to be removed = AGATCGGAAGAG
     cutadapt --cores 16 -B AGATCGGAAGAG --minimum-length 60 --report  minimal  \
-    --output ${input_dir}/Trimmed/${d}_1_trimmed.fastq.gz \
-    --paired-output  ${input_dir}/Trimmed/${d}_2_trimmed.fastq.gz \
+    --output ${input_dir}/Trimmed/${d}_1_trimmed.fastq \
+    --paired-output  ${input_dir}/Trimmed/${d}_2_trimmed.fastq \
     -Z ${r1} ${r2}
 
 done
+
+##-------------- FAST_QC --------------------##
+
+## run for a pair of fastq after trimming ,to verify adapters have been removed
+fastqc_dir=${input_dir}/../Quality_Check/
+mkdir -p ${fastqc_dir}
+
+java_dir=/software/miniconda/envs/fastqc-0.11.9/bin/java
+#java_dir to be found with command "$ which java", when fastqc is loaded
+fastqc -o ${fastqc_dir} -j ${java_dir} \
+${input_dir}/Trimmed/SRR11548475_1_trimmed.fastq  \
+${input_dir}/Trimmed/SRR11548475_2_trimmed.fastq
