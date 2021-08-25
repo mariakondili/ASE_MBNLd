@@ -5,6 +5,7 @@
 ## ClusterProfiler :
 # doc : https://bioconductor.org/packages/release/bioc/vignettes/clusterProfiler/inst/doc/clusterProfiler.html
 # and : http://yulab-smu.top/clusterProfiler-book/index.html
+
 suppressPackageStartupMessages(library(DOSE))
 suppressPackageStartupMessages(library(enrichplot))
 suppressPackageStartupMessages(library(clusterProfiler))
@@ -35,11 +36,6 @@ create_dotplot_GOterms <- function(genenames,gene_format = "SYMBOL", my_ontol="A
   if (my_ontol=="CC") {msg = "Cellular Components" }
   if (my_ontol=="ALL") {msg = "All GO-terms"}
 
-  # barplot(go.enrichm,showCategory = 20,
-  #         x="GeneRatio",
-  #         color="p.adjust", font.size=9,
-  #         title=paste(msg," of ", main))
-
   dotplot(go.enrichm,showCategory = 30,
           x="GeneRatio",color="p.adjust",
           font.size=9,title=paste(msg," of ", main))
@@ -49,7 +45,7 @@ create_dotplot_GOterms <- function(genenames,gene_format = "SYMBOL", my_ontol="A
 
 ####------- signif & Highly-expressed Genes MBNLdecoy vs CTRL -----------####
 l2fc.co  <- 1
-# sigD : created in DESeq_analysis script, contains geneIDs and stat.meausures of DESeq2 
+# sigD : created in DESeq_analysis script, contains geneIDs and stat.meausures of DESeq2
 high_sig_genes <- subset(sigD$GeneID, abs(sigD$log2FoldChange_MBNLdVsCTRL)>= l2fc.co ) #874 genes
 
 create_dotplot_GOterms(high_sig_genes,gene_format = "ENSEMBL",my_ontol="ALL",
