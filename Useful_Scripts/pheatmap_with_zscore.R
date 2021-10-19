@@ -1,4 +1,4 @@
-
+#!/usr/bin/env R
 
 ##> Function of Z-score ,where each value of gene-counts is given as input
 cal_z_score <- function(x){
