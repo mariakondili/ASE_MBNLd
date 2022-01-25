@@ -1,9 +1,12 @@
-#!/usr/bin/env R
+
+---
+title:Find out common genes with CLIP-data, or genes with CTG-repeats
+author: Maria Kondili
+date: Augoust 2021
+output: html_document
+---
 
 ```{r}
-
-
-
 ###
 ### Use the DE-object from "DESeq2_Mbnld_vs_Saline_mouse.R",
 ### and find out common genes with CLIP-data, or CTG-repeats-genes
@@ -15,6 +18,7 @@ suppressPackageStartupMessages(library(dplyr))
 
 
 ####--> Diff.analysis data :
+# D <- DE_tab[order(DE_tab$padj_MBNLdVsCTRL,decreasing=F), oCols]
 sigD <- subset(D, padj_MBNLdVsCTRL < 0.05 & abs(log2FoldChange_MBNLdVsCTRL)>=1 )
 
 
@@ -41,9 +45,9 @@ unique(sigD$geneName[which(sigD$geneName  %in%  ctg_data$external_gene_name)])
 
 
 unique(sigD.aav$geneName[which(sigD.aav$geneName  %in%  ctg_data$external_gene_name)])
-# [1] "Ikzf3"    "Ly9"      "Mab21l3"  "Pglyrp2"  "Slc13a3"  "Cpne2"    "Myo3b"    "Mt3"     
-# [9] "Treml4"   "Cd86"     "Srrm4os"  "Wdfy4"    "Plcg2"    "Cnr2"     "Stat1"    "Scpep1"  
-# [17] "Nrg1"     "Ppm1h"    "Aim2"     "Litaf"    "Trerf1"   "Diaph3"   "Pla2g15"  "Myof"    
+# [1] "Ikzf3"    "Ly9"      "Mab21l3"  "Pglyrp2"  "Slc13a3"  "Cpne2"    "Myo3b"    "Mt3"
+# [9] "Treml4"   "Cd86"     "Srrm4os"  "Wdfy4"    "Plcg2"    "Cnr2"     "Stat1"    "Scpep1"
+# [17] "Nrg1"     "Ppm1h"    "Aim2"     "Litaf"    "Trerf1"   "Diaph3"   "Pla2g15"  "Myof"
 # [25] "Gas7"     "Cdkn3"    "Mis18bp1"
 
 
