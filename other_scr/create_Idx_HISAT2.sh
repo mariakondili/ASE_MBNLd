@@ -35,7 +35,7 @@ hisat2-build  --ss ${index_dir}/GRCh38_splice_sites.txt --exon ${index_dir}/GRCh
 
 ## Files that will be created :
 
-# [user@slurm-client ]$ ll -h /shared/projects/mbnl_dct/annotation_files/hisat2_indexes
+# $ ll -h /projects/mbnl_dct/annotation_files/hisat2_indexes
 # total 42G
 # -rw-rw----+ 1 user user 7.1M Apr  3 11:35 GRCh38_exons.txt
 # -rw-rw----+ 1 user user 8.4M Apr  3 11:35 GRCh38_splice_sites.txt
